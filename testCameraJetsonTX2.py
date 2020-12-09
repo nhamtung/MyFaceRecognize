@@ -115,12 +115,12 @@ def read_cam(cap):
             # If yes, terminate the program
             break
         _, img = cap.read() # grab the next image frame from camera
+        img = cv2.flip(img, 0)
         if show_help:
             cv2.putText(img, help_text, (11, 20), font,
                         1.0, (32, 32, 32), 4, cv2.LINE_AA)
             cv2.putText(img, help_text, (10, 20), font,
                         1.0, (240, 240, 240), 1, cv2.LINE_AA)
-        img = cv2.flip(img, 0)
         cv2.imshow(WINDOW_NAME, img)
         key = cv2.waitKey(10)
         if key == 27: # ESC key: quit program
