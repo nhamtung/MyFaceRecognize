@@ -42,13 +42,14 @@ def compare_distance(emb1, emb2, j):
     global num, name
     distance = get_emb_distance(emb1, emb2)
     # print(distance)
-    if distance < 0.6:
+    if distance < 0.4:
         num += 1
         name = j
 
 
 def read_image_encode(emb1):
     global num, name
+    name_ = "Who are you?"
     for j in os.listdir(imageEncode_folder):
         num = 0
         imageEncode_folder_path = os.path.join(imageEncode_folder, j)
@@ -56,18 +57,15 @@ def read_image_encode(emb1):
             imageEncode_path = os.path.join(imageEncode_folder_path, f)
             emb2 = np.fromfile(imageEncode_path, dtype=float)
             compare_distance(emb1, emb2, j)
-        determine_persion()
+        if num > 0:
+            name_ = name
+    # print("read_image_encode() - name: ", name_)
+    return name_
 
-
-def determine_persion():
-    # print(name, ": ", num)
-    if num > 2:
-        print(name, ": ", num)
-
-imgReconigition_path = os.path.join(imagesReconigition_folder, sys.argv[1])
-img1 = np.array(Image.open(imgReconigition_path))
-# print(img1)
-emb1 = get_face_encode(img1)
-print(imgReconigition_path, "face_encode: ", emb1)
-read_image_encode(emb1)
-print()
+# imgReconigition_path = os.path.join(imagesReconigition_folder, sys.argv[1])
+# img1 = np.array(Image.open(imgReconigition_path))
+# # print(img1)
+# emb1 = get_face_encode(img1)
+# print(imgReconigition_path, "face_encode: ", emb1)
+# read_image_encode(emb1)
+# print()

@@ -1,3 +1,4 @@
+#!/usr/bin/env python 
 # --------------------------------------------------------
 # Camera sample code for Tegra X2/X1
 #
@@ -11,16 +12,25 @@
 # --------------------------------------------------------
 
 # https://gist.github.com/jkjung-avt/86b60a7723b97da19f7bfa3cb7d2690e
-# run:$ python testCameraJetsonTX2.py 
+# run: $python3 testCameraJetsonTX2.py 
 
 import sys
 import argparse
 import subprocess
+import time
+import FaceRecoginitions
+from threading import Thread
+import threading
 
 import cv2
-
+cv2.__version__
 
 WINDOW_NAME = 'CameraDemo'
+nameRecognized = ""
+pre_time_ = 0
+
+full_scrn = False
+help_text = '"Esc" to Quit, "F" to Toggle Fullscreen'
 
 
 def parse_args():
@@ -60,8 +70,6 @@ def open_cam_rtsp(uri, width, height, latency):
                'format=(string)BGRx ! '
                'videoconvert ! appsink').format(uri, latency, width, height)
     return cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
-
-
 def open_cam_usb(dev, width, height):
     # We want to set width and height here, otherwise we could just do:
     #     return cv2.VideoCapture(dev)
@@ -69,8 +77,6 @@ def open_cam_usb(dev, width, height):
                'video/x-raw, width=(int){}, height=(int){} ! '
                'videoconvert ! appsink').format(dev, width, height)
     return cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
-
-
 def open_cam_onboard(width, height):
     gst_elements = str(subprocess.check_output('gst-inspect-1.0'))
     if 'nvcamerasrc' in gst_elements:
@@ -94,7 +100,8 @@ def open_cam_onboard(width, height):
                    'videoconvert ! appsink').format(width, height)
     else:
         raise RuntimeError('onboard camera source not found!')
-    return cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
+    cap = cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
+    return cap
 
 
 def open_window(width, height):
@@ -105,62 +112,99 @@ def open_window(width, height):
 
 
 def read_cam(cap):
-    show_help = True
-    full_scrn = False
-    help_text = '"Esc" to Quit, "H" for Help, "F" to Toggle Fullscreen'
+    global help_text
     font = cv2.FONT_HERSHEY_PLAIN
     while True:
+        if keyControl():
+            break
         if cv2.getWindowProperty(WINDOW_NAME, 0) < 0:
             # Check to see if the user has closed the window
             # If yes, terminate the program
             break
-        _, img = cap.read() # grab the next image frame from camera
-        img = cv2.flip(img, 0)
-        if show_help:
-            cv2.putText(img, help_text, (11, 20), font,
-                        1.0, (32, 32, 32), 4, cv2.LINE_AA)
-            cv2.putText(img, help_text, (10, 20), font,
-                        1.0, (240, 240, 240), 1, cv2.LINE_AA)
-        cv2.imshow(WINDOW_NAME, img)
-        key = cv2.waitKey(10)
-        if key == 27: # ESC key: quit program
-            break
-        elif key == ord('H') or key == ord('h'): # toggle help message
-            show_help = not show_help
-        elif key == ord('F') or key == ord('f'): # toggle fullscreen
-            full_scrn = not full_scrn
-            if full_scrn:
-                cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN,
-                                      cv2.WINDOW_FULLSCREEN)
-            else:
-                cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN,
-                                      cv2.WINDOW_NORMAL)
+        _, img_ = cap.read() # grab the next image frame from camera
+        img_ = cv2.flip(img_, 0)
+        img_ = getFaceLocation(img_)
 
+        cv2.putText(img_, help_text, (11, 20), font, 1.0, (32, 32, 32), 4, cv2.LINE_AA)
+        cv2.putText(img_, help_text, (10, 20), font, 1.0, (240, 240, 240), 1, cv2.LINE_AA)
+        cv2.imshow(WINDOW_NAME, img_)
+
+def keyControl():
+    global full_scrn
+    key = cv2.waitKey(10)
+    if key == 27: # ESC key: quit program
+        return True
+    elif key == ord('H') or key == ord('h'): # toggle help message
+        show_help = not show_help
+    elif key == ord('F') or key == ord('f'): # toggle fullscreen
+        full_scrn = not full_scrn
+        if full_scrn:
+            cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        else:
+            cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
+    return False
+
+def getFaceLocation(img_):
+    global nameRecognized
+    location_ = FaceRecoginitions.get_face_location(img_)
+    if location_ != None:
+        start_point_rec_ = (location_.left(), location_.top()) 
+        end_point_ = (location_.right(), location_.bottom()) 
+        color_rec_ = (0, 255, 0)
+        thickness_rec_ = 5
+        cv2.rectangle(img_, start_point_rec_, end_point_, color_rec_, thickness_rec_)
+        
+        start_point_text_ = (location_.left(), location_.top()-20) 
+        font_text_ = 20
+        fontScale_text_ = 1
+        color_text_ = (0, 0, 255)
+        thickness_text_ = 1
+        cv2.putText(img_, nameRecognized, start_point_text_, font_text_, fontScale_text_, color_text_, thickness_text_, cv2.LINE_AA)
+    return img_
+            
+def faceRecognize(cap):
+    global pre_time_, nameRecognized
+    while True:
+        if keyControl():
+            break
+        curr_time_ = time.clock()
+        time_ = curr_time_ - pre_time_
+        if time_ > 0.5:
+            _, img_ = cap.read() # grab the next image frame from camera
+            img_ = cv2.flip(img_, 0)
+            emb_ = FaceRecoginitions.get_face_encode(img_)
+            # print("testCameraJetsonTX2.py - emb_: ", emb_)
+            nameRecognized = FaceRecoginitions.read_image_encode(emb_)
+            print("testCameraJetsonTX2.py - nameRecognized: ", nameRecognized)
+            pre_time_ = curr_time_
 
 def main():
     args = parse_args()
-    print('Called with args:')
-    print(args)
+    print('Called with args: ', args)
     print('OpenCV version: {}'.format(cv2.__version__))
 
     if args.use_rtsp:
-        cap = open_cam_rtsp(args.rtsp_uri,
-                            args.image_width,
-                            args.image_height,
-                            args.rtsp_latency)
+        cap = open_cam_rtsp(args.rtsp_uri, args.image_width, args.image_height, args.rtsp_latency)
     elif args.use_usb:
-        cap = open_cam_usb(args.video_dev,
-                           args.image_width,
-                           args.image_height)
+        cap = open_cam_usb(args.video_dev, args.image_width, args.image_height)
     else: # by default, use the Jetson onboard camera
-        cap = open_cam_onboard(args.image_width,
-                               args.image_height)
+        cap = open_cam_onboard(args.image_width, args.image_height)
 
     if not cap.isOpened():
         sys.exit('Failed to open camera!')
 
     open_window(args.image_width, args.image_height)
-    read_cam(cap)
+    
+    # read_cam(cap)
+    try:
+        t1 = threading.Thread(target=read_cam, args=(cap,))
+        t2 = threading.Thread(target=faceRecognize, args=(cap,))
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+    except:
+        print ("threading is error")
 
     cap.release()
     cv2.destroyAllWindows()
