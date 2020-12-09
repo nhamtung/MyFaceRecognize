@@ -1,6 +1,7 @@
 #!/usr/bin/env python 
-# run: $python3 faceRecognize.py 
+# run: $python3 captureImage.py --name='NhamVanTung'
 
+import os
 import sys
 import argparse
 import subprocess
@@ -14,12 +15,15 @@ import threading
 import cv2
 cv2.__version__
 
+imageCapture_folder = "imageCapture"
 WINDOW_NAME = "Stream Camera"
-nameRecognized = ""
-pre_time_ = 0
+
+textCapture = ""
+nameFolderPersion = None
+numPersion = 0
 
 full_scrn = False
-help_text = '"Esc" to Quit, "F" to Toggle Fullscreen'
+help_text = '"Esc" to Quit, "C" to capture image, "F" to Toggle Fullscreen'
 
 def parse_args():
     # Parse input arguments
@@ -46,6 +50,10 @@ def parse_args():
     parser.add_argument('--height', dest='image_height',
                         help='image height [1080]',
                         default=1080, type=int)
+
+    parser.add_argument('--name', dest='nameFolderPersion',
+                        help='Name of folder contains image of persion capture',
+                        default=None, type=str)
     args = parser.parse_args()
     return args
 
@@ -53,15 +61,15 @@ def open_window(width, height):
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(WINDOW_NAME, width, height)
     cv2.moveWindow(WINDOW_NAME, 0, 0)
-    cv2.setWindowTitle(WINDOW_NAME, 'Camera Demo for Jetson TX2/TX1')
+    cv2.setWindowTitle(WINDOW_NAME, 'Capture Image')
 
-def keyControl():
+def keyControl(img):
     global full_scrn
     key = cv2.waitKey(10)
     if key == 27: # ESC key: quit program
         return True
-    elif key == ord('H') or key == ord('h'): # toggle help message
-        show_help = not show_help
+    elif key == ord('C') or key == ord('c'): # toggle help message
+        captureImage(img)
     elif key == ord('F') or key == ord('f'): # toggle fullscreen
         full_scrn = not full_scrn
         if full_scrn:
@@ -74,23 +82,23 @@ def read_cam(cap):
     global help_text
     font = cv2.FONT_HERSHEY_PLAIN
     while True:
-        if keyControl():
-            break
         if cv2.getWindowProperty(WINDOW_NAME, 0) < 0:
             # Check to see if the user has closed the window
             # If yes, terminate the program
             break
         _, img_ = cap.read() # grab the next image frame from camera
         img_ = cv2.flip(img_, 0)
+        if keyControl(img_):
+            break
         img_ = getFaceLocation(img_)
 
-        cv2.putText(img_, help_text, (11, 20), font, 1.0, (32, 32, 32), 4, cv2.LINE_AA)
-        cv2.putText(img_, help_text, (10, 20), font, 1.0, (240, 240, 240), 1, cv2.LINE_AA)
+        cv2.putText(img_, help_text, (11, 50), font, 2.0, (32, 32, 32), 4, cv2.LINE_AA)
+        cv2.putText(img_, help_text, (10, 50), font, 2.0, (240, 240, 240), 1, cv2.LINE_AA)
         cv2.imshow(WINDOW_NAME, img_)
 
 
 def getFaceLocation(img_):
-    global nameRecognized
+    global textCapture
     location_ = faceRecoginitionLib.get_face_location(img_)
     if location_ != None:
         start_point_rec_ = (location_.left(), location_.top()) 
@@ -99,35 +107,51 @@ def getFaceLocation(img_):
         thickness_rec_ = 5
         cv2.rectangle(img_, start_point_rec_, end_point_, color_rec_, thickness_rec_)
         
-        start_point_text_ = (location_.left(), location_.top()-20) 
+        # print("textCapture: ", textCapture)
+        start_point_text_ = (100, 100) 
         font_text_ = 20
         fontScale_text_ = 1
         color_text_ = (0, 0, 255)
         thickness_text_ = 1
-        cv2.putText(img_, nameRecognized, start_point_text_, font_text_, fontScale_text_, color_text_, thickness_text_, cv2.LINE_AA)
+        cv2.putText(img_, textCapture, start_point_text_, font_text_, fontScale_text_, color_text_, thickness_text_, cv2.LINE_AA)
     return img_
-            
-def faceRecognize(cap):
-    global pre_time_, nameRecognized
-    while True:
-        if keyControl():
-            break
-        curr_time_ = time.clock()
-        time_ = curr_time_ - pre_time_
-        if time_ > 0.5:
-            _, img_ = cap.read() # grab the next image frame from camera
-            img_ = cv2.flip(img_, 0)
-            emb_ = faceRecoginitionLib.get_face_encode(img_)
-            # print("testCameraJetsonTX2.py - emb_: ", emb_)
-            nameRecognized = faceRecoginitionLib.read_image_encode(emb_)
-            print("testCameraJetsonTX2.py - nameRecognized: ", nameRecognized)
-            pre_time_ = curr_time_
+
+def captureImage(img):
+    print("captureImage()")
+    global nameFolderPersion, textCapture
+    location_ = faceRecoginitionLib.get_face_location(img)
+    if location_ != None:
+        imageCapture_folder_path = os.path.join(imageCapture_folder, nameFolderPersion)
+        saveImage(imageCapture_folder_path, img)
+
+def saveImage(pathFolderName, img):
+    global numPersion, nameFolderPersion, textCapture
+    if not os.path.exists(pathFolderName):
+        os.makedirs(pathFolderName)
+    if numPersion < 5:
+        imageCapture_name_path = os.path.join(pathFolderName, str(numPersion)+".jpg")
+        try: 
+            cv2.imwrite(imageCapture_name_path, img)
+            numPersion = numPersion + 1
+            textCapture = "SUCCESS when save persion " + str(nameFolderPersion) + " -> num of image: " + str(numPersion)
+            print("SUCCESS when save image -> num of image: " + str(numPersion))
+        except:
+            textCapture = "ERROR when save persion " + str(nameFolderPersion) + " -> num of image: " + str(numPersion)
+            print("ERROR when save image")
+    if numPersion == 5:
+        faceRecoginitionLib.faceEncode(nameFolderPersion)
+        textCapture = "Encode the persion " + str(nameFolderPersion) + " -> num of image: " + str(numPersion)
+        print("Encode the Image")
 
 def main():
+    global nameFolderPersion
     args = parse_args()
     print('Called with args: ', args)
-    print('OpenCV version: {}'.format(cv2.__version__))
+    nameFolderPersion = args.nameFolderPersion
+    if not nameFolderPersion:
+        sys.exit('Them ten cua nguoi muon capture vao truong --name=\'\'')
 
+    print('OpenCV version: {}'.format(cv2.__version__))
     if args.use_rtsp:
         cap = cameraJetsonTx2.open_cam_rtsp(args.rtsp_uri, args.image_width, args.image_height, args.rtsp_latency)
     elif args.use_usb:
@@ -143,11 +167,8 @@ def main():
     # cameraJetsonTx2.read_cam(cap)
     try:
         t1 = threading.Thread(target=read_cam, args=(cap,))
-        t2 = threading.Thread(target=faceRecognize, args=(cap,))
         t1.start()
-        t2.start()
         t1.join()
-        t2.join()
     except:
         print ("threading is error")
 

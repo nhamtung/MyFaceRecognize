@@ -12,7 +12,7 @@ def parse_args():
     # Parse input arguments
     desc = 'encoder Image'
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('--name', dest='nameFolderPersion', help='Name of folder contains image of Persion', default=None, type=str)
+    parser.add_argument('--name', dest='nameFolderPersion', help='Name of folder contains image of persion encode', default=None, type=str)
     args = parser.parse_args()
     return args
 
