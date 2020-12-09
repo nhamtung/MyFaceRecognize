@@ -1,0 +1,154 @@
+
+<link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css"/>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/bootstrap/dist/js/bootstrap.min.js"></script>
+
+<style>
+	#video {
+		position: relative;
+		width:100%;
+	}
+	
+	#text {
+		color:red;
+		position:absolute; 
+		width : 100%; 
+		top:40%;
+		text-align: center; 		
+		font-weight : bold;
+		font-size : 36;
+	}
+	
+</style>
+
+<div class="container">
+  <div class="row">
+    <div class="col-3">
+      
+    </div>
+    <div class="col-6">
+		<video id="video">Video stream not available.</video>
+		<div id="text"></div>
+    </div>
+    <div class="col-3">
+		<br>
+		<input id="username" placeholder="Enter user name"/>
+		<br><br>
+		<button class="btn btn-primary" id="recordBtn" onclick="addUser()">Add User</button>		
+		<br><br>
+		<button class="btn btn-primary" id="recogBtn" onclick="recognize()">Recognize</button>		
+    </div>
+  </div>
+  <canvas id="canvas" style="display:none"></canvas>
+  <img id="photo">
+</div>
+
+
+<script>
+const MAX_COUNT = 5;
+var streaming = false;
+
+var video = null;
+var canvas = null;
+var photo = null;
+var recording = false;
+var recognizing = false;
+var countDown = 0;
+var username = "";
+
+function startup() {
+    video = document.getElementById('video');
+    canvas = document.getElementById('canvas');
+    photo = document.getElementById('photo');
+    
+	navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+    .then(function(stream) {
+        video.srcObject = stream;
+        video.play();
+    })
+    .catch(function(err) {
+        console.log("An error occurred! " + err);
+    });
+}
+
+function addUser() {
+	if(recording) {
+		return;
+	}
+	
+	username = $("#username").val().trim();
+	
+	if(username == '') {
+		alert('Please enter user name');
+		return;
+	}
+	
+	recording = true;
+	countDown = MAX_COUNT + 1;
+	
+	$("#text").show();
+	$("#text").css("fontSize", 36);
+	$("#text").text("Recording new user ...");
+}
+
+function recognize() {
+	recognizing = true;
+}
+
+function captureImage() {
+	var context = canvas.getContext('2d');
+	var width = video.videoWidth;
+	var height = video.videoHeight;
+	canvas.width = width;
+	canvas.height = height;
+	context.drawImage(video, 0, 0, width, height);
+	return canvas.toDataURL('image/jpeg');
+}
+
+function post(data, action, callback){
+	$.ajax({
+		url: action,
+		contentType: "application/json",
+		data : JSON.stringify(data),
+		method: "POST",
+		success: function(result){
+			if(callback) callback(result);
+		}
+	});
+}
+
+startup();
+
+setInterval(function(){
+	var imageData = captureImage();
+	if(imageData.length <= 23) return;
+	
+	if(recording) {	
+		if(countDown > 0 && countDown <= MAX_COUNT){			
+			post({
+					image_data : imageData,
+					username : username
+				}, 
+				'/add_user_image'
+			);
+			$("#text").css("fontSize", 72);
+			$("#text").text(countDown);
+		}else if(countDown == 0){
+			$("#text").css("fontSize", 36);
+			$("#text").text("Done");
+		}else if(countDown < 0){
+			$("#text").text("");
+			recording = false;
+		}
+		countDown--;
+	}else if(recognizing){
+		post({image_data : imageData}, '/recognize',
+			function(result) {
+				$("#text").css("fontSize", 36);
+				$("#text").text(result.username);
+			});		
+	}	
+}, 2000);
+
+</script>
