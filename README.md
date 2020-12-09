@@ -8,4 +8,4 @@
 + $pip3 install opencv-python
 
 # Test face recognize with jetsion TX2
-- Run: $python3 testCameraJetsonTX2.py
+- Run: $python3 faceRecognizeWithJetsonTX2.py
