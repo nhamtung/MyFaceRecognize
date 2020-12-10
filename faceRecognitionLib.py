@@ -39,7 +39,7 @@ def compare_distance(emb1, emb2, j):
     global num, name
     distance = get_emb_distance(emb1, emb2)
     # print(distance)
-    if distance < 0.6:
+    if distance < 0.4:
         print("faceRecognitionLib.py - name: ", name)
         num += 1
         name = j

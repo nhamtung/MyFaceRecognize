@@ -5,7 +5,7 @@ import sys
 import argparse
 import subprocess
 import time
-import faceRecoginitionLib
+import faceRecognitionLib
 import cameraJetsonTx2
 
 from threading import Thread
@@ -60,8 +60,6 @@ def keyControl():
     key = cv2.waitKey(10)
     if key == 27: # ESC key: quit program
         return True
-    elif key == ord('H') or key == ord('h'): # toggle help message
-        show_help = not show_help
     elif key == ord('F') or key == ord('f'): # toggle fullscreen
         full_scrn = not full_scrn
         if full_scrn:
@@ -91,7 +89,7 @@ def read_cam(cap):
 
 def getFaceLocation(img_):
     global nameRecognized
-    location_ = faceRecoginitionLib.get_face_location(img_)
+    location_ = faceRecognitionLib.get_face_location(img_)
     if location_ != None:
         start_point_rec_ = (location_.left(), location_.top()) 
         end_point_ = (location_.right(), location_.bottom()) 
@@ -117,9 +115,9 @@ def faceRecognize(cap):
         if time_ > 0.5:
             _, img_ = cap.read() # grab the next image frame from camera
             img_ = cv2.flip(img_, 0)
-            emb_ = faceRecoginitionLib.get_face_encode(img_)
+            emb_ = faceRecognitionLib.get_face_encode(img_)
             # print("testCameraJetsonTX2.py - emb_: ", emb_)
-            nameRecognized = faceRecoginitionLib.read_image_encode(emb_)
+            nameRecognized = faceRecognitionLib.read_image_encode(emb_)
             print("testCameraJetsonTX2.py - nameRecognized: ", nameRecognized)
             pre_time_ = curr_time_
 
@@ -140,7 +138,7 @@ def main():
 
     open_window(args.image_width, args.image_height)
     
-    # cameraJetsonTx2.read_cam(cap)
+    # read_cam(cap)
     try:
         t1 = threading.Thread(target=read_cam, args=(cap,))
         t2 = threading.Thread(target=faceRecognize, args=(cap,))

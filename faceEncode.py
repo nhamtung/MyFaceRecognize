@@ -3,7 +3,7 @@
 
 import sys
 import argparse
-import faceRecoginitionLib
+import faceRecognitionLib
 
 import cv2
 cv2.__version__
@@ -20,7 +20,7 @@ def main():
     args = parse_args()
     print('Called with args: ', args)
     print('OpenCV version: {}'.format(cv2.__version__))
-    faceRecoginitionLib.faceEncode(args.nameFolderPersion)
+    faceRecognitionLib.faceEncode(args.nameFolderPersion)
 
 if __name__ == '__main__':
     main()
