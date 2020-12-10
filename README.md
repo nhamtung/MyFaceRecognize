@@ -4,8 +4,8 @@
 - Jetson TX2 and camera
 - Screen
 - Install:
-+ $pip3 install dlib==19.8.1
-+ $pip3 install opencv-python
+    + $pip3 install dlib==19.8.1
+    + $pip3 install opencv-python
 --------------------------------------------------------------------------------
 
 # Open windown for stream camera
@@ -18,7 +18,7 @@
 
 # Camture image and save to folder imageCapture with jetson TX2
 # folderName is name of folder to save image of person capture (simple folderName is name of persion)
-# press key 'C' tu capture image
+# press key 'C' to capture image
 # Capture five image to auto encode image
 - Run: $python3 captureImage.py --name='folderName'
 --------------------------------------------------------------------------------
