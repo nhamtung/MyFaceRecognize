@@ -9,7 +9,10 @@
 --------------------------------------------------------------------------------
 
 # Open windown for stream camera
-- Run: $python3 streamCamera.py
+- Run with onboard camera: $python3 streamCamera.py
+- Run with usb camera: 
+    + Check usb camera port: $ls /dev/video* (example: /dev/video0)
+    + Run: $python3 streamCamera.py --usb --vid=0
 --------------------------------------------------------------------------------
 
 # Test face recognize with jetson TX2

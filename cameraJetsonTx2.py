@@ -29,6 +29,7 @@ def open_cam_rtsp(uri, width, height, latency):
     return cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
 
 def open_cam_usb(dev, width, height):
+    print("cameraJetsonTx2.py-open_cam_usb() - /dev/video" + str(dev))
     # We want to set width and height here, otherwise we could just do:
     #     return cv2.VideoCapture(dev)
     gst_str = ('v4l2src device=/dev/video{} ! '
