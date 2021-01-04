@@ -87,7 +87,7 @@ def read_cam(cap):
             # If yes, terminate the program
             break
         _, img_ = cap.read() # grab the next image frame from camera
-        img_ = cv2.flip(img_, 0)
+        # img_ = cv2.flip(img_, 0)
         if keyControl(img_):
             break
         img_ = getFaceLocation(img_)

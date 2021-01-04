@@ -79,7 +79,7 @@ def read_cam(cap):
             # If yes, terminate the program
             break
         _, img_ = cap.read() # grab the next image frame from camera
-        img_ = cv2.flip(img_, 0)
+        # img_ = cv2.flip(img_, 0)
         img_ = getFaceLocation(img_)
 
         cv2.putText(img_, help_text, (11, 20), font, 1.0, (32, 32, 32), 4, cv2.LINE_AA)
@@ -112,9 +112,9 @@ def faceRecognize(cap):
             break
         curr_time_ = time.clock()
         time_ = curr_time_ - pre_time_
-        if time_ > 0.5:
+        if time_ > 0:
             _, img_ = cap.read() # grab the next image frame from camera
-            img_ = cv2.flip(img_, 0)
+            # img_ = cv2.flip(img_, 0)
             emb_ = faceRecognitionLib.get_face_encode(img_)
             # print("testCameraJetsonTX2.py - emb_: ", emb_)
             nameRecognized = faceRecognitionLib.read_image_encode(emb_)
