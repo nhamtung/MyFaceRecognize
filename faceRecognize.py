@@ -116,10 +116,11 @@ def faceRecognize(cap):
             _, img_ = cap.read() # grab the next image frame from camera
             # img_ = cv2.flip(img_, 0)
             emb_ = faceRecognitionLib.get_face_encode(img_)
-            # print("testCameraJetsonTX2.py - emb_: ", emb_)
             nameRecognized = faceRecognitionLib.read_image_encode(emb_)
             print("testCameraJetsonTX2.py - nameRecognized: ", nameRecognized)
+            # time.sleep(5)
             pre_time_ = curr_time_
+            print("faceRecognitionLib.py-time_face_recognize: " + str(time.clock()-curr_time_))
 
 def main():
     args = parse_args()
@@ -138,8 +139,10 @@ def main():
 
     open_window(args.image_width, args.image_height)
     
-    # read_cam(cap)
     try:
+        # read_cam(cap)
+        # faceRecognize(cap)
+
         t1 = threading.Thread(target=read_cam, args=(cap,))
         t2 = threading.Thread(target=faceRecognize, args=(cap,))
         t1.start()

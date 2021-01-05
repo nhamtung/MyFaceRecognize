@@ -4,6 +4,7 @@ import os
 import sys
 import numpy as np
 import dlib
+import time
 from PIL import Image
 
 imageCapture_folder = "imageCapture"
@@ -52,7 +53,9 @@ def read_image_encode(emb1):
         imageEncode_folder_path = os.path.join(imageEncode_folder, j)
         for f in os.listdir(imageEncode_folder_path):
             imageEncode_path = os.path.join(imageEncode_folder_path, f)
+            curr_time = time.clock()
             emb2 = np.fromfile(imageEncode_path, dtype=float)
+            # print("faceRecognitionLib.py-time_get_feature: " + str(time.clock()-curr_time))
             compare_distance(emb1, emb2, j)
         if num > 0:
             name_ = name
